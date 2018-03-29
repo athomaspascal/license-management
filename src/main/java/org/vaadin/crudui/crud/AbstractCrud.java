@@ -14,8 +14,24 @@ public abstract class AbstractCrud<T> extends Composite implements Crud<T> {
     protected Class<T> domainType;
 
     protected FindAllCrudOperationListener<T> findAllOperation = () -> Collections.emptyList();
+
+    public FindallFiltercrudoperationlistener<T> getFindAllFilterOperation() {
+        return findAllFilterOperation;
+    }
+
+    public void setFindAllFilterOperation(FindallFiltercrudoperationlistener<T> findAllFilterOperation) {
+        this.findAllFilterOperation = findAllFilterOperation;
+    }
+
+    protected FindallFiltercrudoperationlistener<T> findAllFilterOperation = (String s) -> Collections.emptyList();
+
     protected AddOperationListener<T> addOperation = t -> null;
     protected UpdateOperationListener<T> updateOperation = t -> null;
+
+
+
+    protected DetailOperationListener<T> detailOperation = t -> null;
+
     protected DeleteOperationListener<T> deleteOperation = t -> { };
 
     protected CrudLayout crudLayout;
@@ -63,16 +79,31 @@ public abstract class AbstractCrud<T> extends Composite implements Crud<T> {
         this.updateOperation = updateOperation;
     }
 
+    public DetailOperationListener<T> getDetailOperation() {
+        return detailOperation;
+    }
+
+    @Override
+    public void setDetailOperation(DetailOperationListener<T> detailOperation) {
+        this.detailOperation = detailOperation;
+    }
+
+
     @Override
     public void setDeleteOperation(DeleteOperationListener<T> deleteOperation) {
         this.deleteOperation = deleteOperation;
     }
 
     @Override
-    public void setOperations(FindAllCrudOperationListener<T> findAllOperation, AddOperationListener<T> addOperation, UpdateOperationListener<T> updateOperation, DeleteOperationListener<T> deleteOperation) {
+    public void setOperations(FindAllCrudOperationListener<T> findAllOperation,
+                              AddOperationListener<T> addOperation,
+                              UpdateOperationListener<T> updateOperation,
+                              DetailOperationListener<T> detailOperation,
+                              DeleteOperationListener<T> deleteOperation) {
         setFindAllOperation(findAllOperation);
         setAddOperation(addOperation);
         setUpdateOperation(updateOperation);
+        setDetailOperation(detailOperation);
         setDeleteOperation(deleteOperation);
     }
 
@@ -85,8 +116,11 @@ public abstract class AbstractCrud<T> extends Composite implements Crud<T> {
     public void setCrudListener(CrudListener<T> crudListener) {
         setAddOperation(crudListener::add);
         setUpdateOperation(crudListener::update);
+        setDetailOperation(crudListener::detail);
         setDeleteOperation(crudListener::delete);
         setFindAllOperation(crudListener::findAll);
+        setFindAllFilterOperation(crudListener::findAllFilter);
+
     }
 
 }

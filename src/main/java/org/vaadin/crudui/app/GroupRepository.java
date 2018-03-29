@@ -8,13 +8,13 @@ import java.util.List;
 public class GroupRepository {
 
     public static List<Group> findAll() {
-        return JPAService.runInTransaction(em ->
+        return JPATeamService.runInTransaction(em ->
                 em.createQuery("select g from Group g").getResultList()
         );
     }
 
     public static Group save(Group group) {
-        return JPAService.runInTransaction(em -> em.merge(group));
+        return JPATeamService.runInTransaction(em -> em.merge(group));
     }
 
 }

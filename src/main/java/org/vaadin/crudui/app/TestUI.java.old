@@ -46,9 +46,10 @@ public class TestUI extends UI implements CrudListener<User> {
         setContent(tabSheet);
 
         addCrud(getDefaultCrud(), "Default");
+        /*
         addCrud(getDefaultCrudWithFixes(), "Default (with fixes)");
         addCrud(getConfiguredCrud(), "Configured");
-        addCrud(getEditableGridCrud(), "Editable Grid");
+        addCrud(getEditableGridCrud(), "Editable Grid");*/
     }
 
     private void addCrud(Crud crud, String caption) {

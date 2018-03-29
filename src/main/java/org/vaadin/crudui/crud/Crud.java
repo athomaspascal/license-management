@@ -13,6 +13,8 @@ public interface Crud<T> extends Component {
 
     void setUpdateOperationVisible(boolean visible);
 
+    void setDetailOperationVisible(boolean visible);
+
     void setDeleteOperationVisible(boolean visible);
 
     void setFindAllOperationVisible(boolean visible);
@@ -27,9 +29,15 @@ public interface Crud<T> extends Component {
 
     void setUpdateOperation(UpdateOperationListener<T> updateOperation);
 
+    void setDetailOperation(DetailOperationListener<T> detailOperation);
+
     void setDeleteOperation(DeleteOperationListener<T> deleteOperation);
 
-    void setOperations(FindAllCrudOperationListener<T> findAllOperation, AddOperationListener<T> addOperation, UpdateOperationListener<T> updateOperation, DeleteOperationListener<T> deleteOperation);
+    void setOperations(FindAllCrudOperationListener<T> findAllOperation,
+                       AddOperationListener<T> addOperation,
+                       UpdateOperationListener<T> updateOperation,
+                       DetailOperationListener<T> detailOperation,
+                       DeleteOperationListener<T> deleteOperation);
 
     void setCrudListener(CrudListener<T> crudListener);
 

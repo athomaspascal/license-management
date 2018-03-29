@@ -1,0 +1,255 @@
+package org.vaadin.crudui.app;
+
+import com.vaadin.server.VaadinRequest;
+import com.vaadin.ui.*;
+import org.vaadin.crudui.crud.Crud;
+import org.vaadin.crudui.crud.CrudListener;
+import org.vaadin.crudui.crud.CrudOperation;
+import org.vaadin.crudui.crud.impl.GridCrud;
+import org.vaadin.crudui.form.impl.form.factory.GridLayoutCrudFormFactory;
+import org.vaadin.jetty.VaadinJettyServer;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.Properties;
+
+/**
+ * @author Alejandro Duarte
+ */
+public class TestNewUI extends UI implements CrudListener<Plateform> {
+
+    public static void main(String[] args) {
+
+
+        JPAPlateform.init();
+        Properties p = new Properties();
+        try {
+            p.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("start.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int port = Integer.parseInt(p.getProperty("port"));
+        String host = p.getProperty("host");
+        InetSocketAddress byAddress1 = new InetSocketAddress(host, port);
+
+        VaadinJettyServer server = null;
+        try {
+            server = new VaadinJettyServer(byAddress1, TestNewUI.class);
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private TabSheet tabSheet = new TabSheet();
+
+    @Override
+    protected void init(VaadinRequest request) {
+        //tabSheet.setSizeFull();
+        CssLayout h1 = new CssLayout();
+        //tabSheet.setSizeUndefined();
+        h1.addComponent(tabSheet);
+
+        //h1.setExpandRatio(tabSheet,0.5f);
+        h1.setSizeFull();
+        setContent(h1);
+
+        addCrud(getATSCrud("ATS"), "ATS");
+        addCrud(getATSCrud("DEV"), "DEV");
+        addCrud(getATSCrud("REC"), "REC");
+
+        //tabSheet.setSizeUndefined();
+        //tabSheet.set
+
+        /*addCrud(getPlateformCrud(), "Default");*/
+
+        /*
+        addCrud(getDefaultCrudWithFixes(), "Default (with fixes)");
+        addCrud(getConfiguredCrud(), "Configured");
+        addCrud(getEditableGridCrud(), "Editable Grid");*/
+    }
+
+    private void addCrud(Crud crud, String caption) {
+        VerticalLayout layout = new VerticalLayout(crud);
+        //layout.setSizeFull();
+        //layout.setExpandRatio(crud,0.5f);
+        layout.setMargin(true);
+
+        tabSheet.addTab(layout, caption);
+    }
+/*
+    private Crud getPlateformCrud() {
+        return new GridCrud<>(Plateform.class, this);
+    }
+*/
+    private Crud getATSCrud(String filtre) {
+        GridCrud<Plateform> crud = new GridCrud<>(Plateform.class, this);
+        crud.setFiltre(filtre);
+        setCrudProperties(crud);
+
+        return crud;
+    }
+
+
+
+
+    private void setCrudProperties(GridCrud<Plateform> crud) {
+        crud.getGrid().setColumns("idPlateform", "name","os","osName","osLevel",
+                "cpuQty","coreSize","frequency","power",
+                "linuxrelease","memory","storageMax","nbIpAdresse");
+
+        GridLayoutCrudFormFactory<Plateform> formFactory = new GridLayoutCrudFormFactory<>(Plateform.class, 2, 2);
+        formFactory.setVisibleProperties(CrudOperation.UPDATE, "name","os","osName","osLevel",
+                "cpuQty","coreSize","frequency","power",
+                "linuxrelease","memory","storageMax","nbIpAdresse");
+        formFactory.setVisibleProperties(CrudOperation.ADD,"name","os","osName","osLevel",
+                "cpuQty","coreSize","frequency","power",
+                "linuxrelease","memory","storageMax","nbIpAdresse");
+        crud.setCrudFormFactory(formFactory);
+        formFactory.setButtonCaption(CrudOperation.ADD, "Add new plateform");
+
+        formFactory.setUseBeanValidation(true);
+    }
+
+    /*
+    private Crud getDefaultCrudWithFixes() {
+        GridCrud<UserTeam> crud = new GridCrud<>(UserTeam.class);
+        crud.setCrudListener(this);
+        //crud.getCrudFormFactory().setFieldProvider("groups", new CheckBoxGroupProvider<>(GroupRepository.findAll()));
+        //crud.getCrudFormFactory().setFieldProvider("mainGroup", new ComboBoxProvider<>(GroupRepository.findAll()));
+
+        return crud;
+    }
+
+    private Crud getConfiguredCrud() {
+        GridCrud<UserTeam> crud = new GridCrud<>(UserTeam.class, new HorizontalSplitCrudLayout());
+        crud.setCrudListener(this);
+
+        GridLayoutCrudFormFactory<UserTeam> formFactory = new GridLayoutCrudFormFactory<>(UserTeam.class, 2, 2);
+        crud.setCrudFormFactory(formFactory);
+
+        formFactory.setUseBeanValidation(true);
+
+        formFactory.setErrorListener(e -> Notification.show("Custom error message (simulated error)", Notification.Type.ERROR_MESSAGE));
+
+        formFactory.setVisibleProperties(CrudOperation.READ, "idUser", "name", "password","dateCreation");
+        formFactory.setVisibleProperties(CrudOperation.ADD, "name", "password","dateCreation");
+        formFactory.setVisibleProperties(CrudOperation.UPDATE, "idUser", "name", "dateCreation");
+        formFactory.setVisibleProperties(CrudOperation.DELETE, "name","password");
+
+        formFactory.setDisabledProperties("id");
+
+        crud.getGrid().setColumns("name", "password","dateCreation");
+        //crud.getGrid().getColumn("mainGroup").setRenderer(group -> group == null ? "" : ((Group) group).getName(), new TextRenderer());
+        ((Grid.Column<UserTeam, Date>) crud.getGrid().getColumn("dateCreation")).setRenderer(new DateRenderer("%1$tY-%1$tm-%1$te"));
+
+        formFactory.setFieldType("password", PasswordField.class);
+        formFactory.setFieldCreationListener("dateCreation", field -> ((DateField) field).setDateFormat("yyyy-MM-dd"));
+
+        //formFactory.setFieldProvider("groups", new CheckBoxGroupProvider<>("Groups", GroupRepository.findAll(), Group::getName));
+        //formFactory.setFieldProvider("mainGroup", new ComboBoxProvider<>("Main Group", GroupRepository.findAll(), Group::getName));
+
+        formFactory.setButtonCaption(CrudOperation.ADD, "Add new user");
+        crud.setRowCountCaption("%d user(s) found");
+
+        return crud;
+    }
+
+    private Crud getEditableGridCrud() {
+        EditableGridCrud<UserTeam> crud = new EditableGridCrud<>(UserTeam.class, this);
+
+        crud.getGrid().setColumns("name", "password","dateCreation");
+        crud.getCrudFormFactory().setVisibleProperties("name", "password","dateCreation");
+
+        crud.getGrid().getColumn("password").setRenderer(user -> "********", new TextRenderer());
+        //crud.getGrid().getColumn("mainGroup").setRenderer(group -> group == null ? "" : ((Group) group).getName(), new TextRenderer());
+       // crud.getGrid().getColumn("groups").setRenderer(groups -> StringUtils.join(((Set<Group>) groups).stream().map(g -> g.getName()).collect(Collectors.toList()), ", "), new TextRenderer());
+
+        crud.getCrudFormFactory().setFieldType("password", PasswordField.class);
+        //crud.getCrudFormFactory().setFieldProvider("groups", new CheckBoxGroupProvider<>(null, GroupRepository.findAll(), group -> group.getName()));
+        //crud.getCrudFormFactory().setFieldProvider("mainGroup", new ComboBoxProvider<>(null, GroupRepository.findAll(), group -> group.getName()));
+
+        crud.getCrudFormFactory().setUseBeanValidation(true);
+
+        return crud;
+    }
+*/
+
+
+    /*
+    @Override
+    public UserTeam add(UserTeam user) {
+        UserTeamRepository.save(user);
+        return user;
+    }
+
+    @Override
+    public UserTeam update(UserTeam user) {
+        if (user.getIdUser() == 5) {
+            throw new RuntimeException("A simulated error has occurred");
+        }
+        return UserTeamRepository.save(user);
+    }
+
+    @Override
+    public void delete(UserTeam user) {
+        UserTeamRepository.delete(user);
+    }
+
+    @Override
+    public Collection<UserTeam> findAll() {
+        return UserTeamRepository.findAll();
+    }
+*/
+
+
+    @Override
+    public Plateform add(Plateform plateform) {
+        VerticalLayout c = (VerticalLayout) tabSheet.getSelectedTab();
+        GridCrud<Plateform> g = (GridCrud<Plateform>) c.getComponent(0);
+        plateform.setEnv(g.getFiltre());
+        PlateformRepository.save(plateform);
+        return plateform;
+    }
+
+    @Override
+    public Plateform update(Plateform plateform) {
+        VerticalLayout c = (VerticalLayout) tabSheet.getSelectedTab();
+        GridCrud<Plateform> g = (GridCrud<Plateform>) c.getComponent(0);
+        plateform.setEnv(g.getFiltre());
+
+        return PlateformRepository.save(plateform);
+    }
+
+
+    @Override
+    public Plateform detail(Plateform plateform) {
+        VerticalLayout c = (VerticalLayout) tabSheet.getSelectedTab();
+        GridCrud<Plateform> g = (GridCrud<Plateform>) c.getComponent(0);
+        plateform.setEnv(g.getFiltre());
+
+        return PlateformRepository.save(plateform);
+    }
+
+    @Override
+    public void delete(Plateform plateform) {
+        PlateformRepository.delete(plateform);
+    }
+
+    @Override
+    public Collection<Plateform> findAll() {
+        return PlateformRepository.findAll();
+    }
+
+    @Override
+    public Collection<Plateform> findAllFilter(String filtre) {
+        return PlateformRepository.findAllFilter(filtre);
+    }
+
+
+}

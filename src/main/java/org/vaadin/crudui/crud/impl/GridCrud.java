@@ -2,10 +2,7 @@ package org.vaadin.crudui.crud.impl;
 
 import com.vaadin.data.provider.Query;
 import com.vaadin.icons.VaadinIcons;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Component;
-import com.vaadin.ui.Grid;
-import com.vaadin.ui.Notification;
+import com.vaadin.ui.*;
 import org.vaadin.crudui.crud.AbstractCrud;
 import org.vaadin.crudui.crud.CrudListener;
 import org.vaadin.crudui.crud.CrudOperation;
@@ -29,10 +26,22 @@ public class GridCrud<T> extends AbstractCrud<T> {
     protected Button findAllButton;
     protected Button addButton;
     protected Button updateButton;
+    protected Button detailButton;
     protected Button deleteButton;
+    protected Label title;
+
     protected Grid<T> grid;
 
     protected Collection<T> items;
+    protected String filtre;
+
+    public String getFiltre() {
+        return filtre;
+    }
+
+    public void setFiltre(String filtre) {
+        this.filtre = filtre;
+    }
 
     public GridCrud(Class<T> domainType) {
         this(domainType, new WindowBasedCrudLayout(), new VerticalCrudFormFactory<>(domainType), null);
@@ -60,6 +69,7 @@ public class GridCrud<T> extends AbstractCrud<T> {
     }
 
     protected void initLayout() {
+
         findAllButton = new Button("", e -> findAllButtonClicked());
         findAllButton.setDescription("Refresh list");
         findAllButton.setIcon(VaadinIcons.REFRESH);
@@ -74,6 +84,11 @@ public class GridCrud<T> extends AbstractCrud<T> {
         updateButton.setDescription("Update");
         updateButton.setIcon(VaadinIcons.PENCIL);
         crudLayout.addToolbarComponent(updateButton);
+
+        detailButton = new Button("", e -> detailButtonClicked());
+        detailButton.setDescription("Detail");
+        detailButton.setIcon(VaadinIcons.EYE);
+        crudLayout.addToolbarComponent(detailButton);
 
         deleteButton = new Button("", e -> deleteButtonClicked());
         deleteButton.setDescription("Delete");
@@ -105,6 +120,11 @@ public class GridCrud<T> extends AbstractCrud<T> {
     }
 
     @Override
+    public void setDetailOperationVisible(boolean visible) {
+        updateButton.setVisible(visible);
+    }
+
+    @Override
     public void setDeleteOperationVisible(boolean visible) {
         deleteButton.setVisible(visible);
     }
@@ -115,7 +135,10 @@ public class GridCrud<T> extends AbstractCrud<T> {
     }
 
     public void refreshGrid() {
-        items = findAllOperation.findAll();
+        if (this.getFiltre() == null)
+            items = findAllOperation.findAll();
+        else
+            items = findAllFilterOperation.findAllFilter(this.getFiltre());
         grid.setItems(items);
     }
 
@@ -189,6 +212,29 @@ public class GridCrud<T> extends AbstractCrud<T> {
         });
     }
 
+
+    protected void detailButtonClicked() {
+        T domainObject = grid.asSingleSelect().getValue();
+
+
+        showForm(CrudOperation.UPDATE, domainObject, false, savedMessage, event -> {
+            try {
+                T updatedObject = detailOperation.perform(domainObject);
+                grid.asSingleSelect().clear();
+                refreshGrid();
+                if (items.contains(updatedObject)) {
+                    grid.asSingleSelect().setValue(updatedObject);
+                    // TODO: grid.scrollTo(updatedObject);
+                }
+            } catch (CrudOperationException e1) {
+                refreshGrid();
+            } catch (Exception e2) {
+                refreshGrid();
+                throw e2;
+            }
+        });
+    }
+
     protected void deleteButtonClicked() {
         T domainObject = grid.asSingleSelect().getValue();
         showForm(CrudOperation.DELETE, domainObject, true, deletedMessage, event -> {
@@ -221,6 +267,28 @@ public class GridCrud<T> extends AbstractCrud<T> {
 
         crudLayout.showForm(operation, form);
     }
+
+
+    protected void showWindow(CrudOperation operation,
+                              T domainObject, boolean readOnly,
+                              String successMessage,
+                              Button.ClickListener buttonClickListener) {
+        Component form = crudFormFactory.buildNewForm(operation, domainObject, readOnly,
+                cancelClickEvent -> {
+                    T selected = grid.asSingleSelect().getValue();
+                    crudLayout.hideForm();
+                    grid.asSingleSelect().clear();
+                    grid.asSingleSelect().setValue(selected);
+                },
+                operationPerformedClickEvent -> {
+                    crudLayout.hideForm();
+                    buttonClickListener.buttonClick(operationPerformedClickEvent);
+                    Notification.show(successMessage);
+                });
+
+        crudLayout.showForm(operation, form);
+    }
+
 
     public Grid<T> getGrid() {
         return grid;
